@@ -28,11 +28,20 @@ export class UserService {
 
   async getOneById(id: string, page: number, limit: number): Promise<any> {
     try {
+      const empltyQuizes = await Quiz.find({ relations: ['questions'] });
+      for (let index = 0; index < empltyQuizes.length; index++) {
+        const quiz = empltyQuizes[index];
+        if (quiz.questions.length === 0) {
+          console.log('emp');
+          await Quiz.delete(quiz.id);
+        }
+      }
+
       const quizes = await Quiz.find({ relations: ['user'] });
       const userQuiz = quizes.filter((quiz) => {
         return quiz.user.id === id;
       });
-      console.log(quizes, id);
+      //console.log(quizes, id);
 
       const pageNumber = page || 1;
       const size = limit || 2;

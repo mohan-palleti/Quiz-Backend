@@ -16,16 +16,17 @@ export class AuthGuard implements CanActivate {
     @InjectRepository(User) private userRepository: Repository<User>,
   ) {}
 
-  canActivate(
-    context: ExecutionContext,
-  ): boolean | Promise<boolean> | Observable<boolean> {
+  async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context.switchToHttp().getRequest();
     try {
       const token = request.headers.token;
       // console.log(token);
       const decoded = jwt.verify(token, 'secret');
-      if (decoded) {
-        request.authUser = decoded;
+      console.log('decoded', decoded);
+      const user = await User.findOne({ where: { id: decoded.id } });
+      console.log(user);
+      if (user) {
+        request.authUser = user;
         return true;
       }
     } catch (err) {

@@ -18,6 +18,7 @@ import * as jwt from 'jsonwebtoken';
 import { createQuizSchema } from 'src/joi-schema/joi-schema';
 
 import { QuizService } from './quiz.service';
+import { AuthDecor, IAuth } from 'src/Decor/AuthDecor';
 
 @Controller('quiz')
 export class QuizController {
@@ -41,13 +42,14 @@ export class QuizController {
 
   @Get()
   findAll(@Query() { page, limit }: { page: number; limit: number }) {
-    // console.log(page);
     return this.quizService.getAll(+page, +limit);
   }
 
+  @UseGuards(AuthGuard)
   @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.quizService.getOneById(id);
+  findOne(@Param('id') id: string, @AuthDecor() auth: IAuth) {
+    console.log('controller');
+    return this.quizService.getOneById(id, auth);
   }
 
   @Get('permaLink/:id')
@@ -55,6 +57,7 @@ export class QuizController {
     return this.quizService.getOnePermaLink(id);
   }
 
+  @UseGuards(AuthGuard)
   @Post('score/:permalink')
   getScore(@Param('permalink') permalink: string, @Body() body: any) {
     return this.quizService.getScore(permalink, body);
@@ -62,12 +65,13 @@ export class QuizController {
 
   @UseGuards(AuthGuard)
   @Patch(':id')
-  update(@Param('id') id: string, @Body() body: any) {
-    return this.quizService.updatebyID(id, body);
+  update(@Param('id') id: string, @Body() body: any, @AuthDecor() auth: IAuth) {
+    return this.quizService.updatebyID(id, body, auth);
   }
 
+  @UseGuards(AuthGuard)
   @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.quizService.deleteQuiz(id);
+  remove(@Param('id') id: string, @AuthDecor() auth: IAuth) {
+    return this.quizService.deleteQuiz(id, auth);
   }
 }

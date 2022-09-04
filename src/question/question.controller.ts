@@ -32,11 +32,6 @@ export class QuestionController {
     return this.questionService.createQuestion(body);
   }
 
-  @Get()
-  findAll() {
-    return this.questionService.getAll();
-  }
-
   @Get(':id')
   findOne(@Param('id', ParseIntPipe) id: string) {
     return this.questionService.getOneById(id);
