@@ -105,29 +105,31 @@ export class QuizService {
   }
 
   async updatebyID(id: string, body: any, auth: IAuth) {
-    const oneQuiz = await Quiz.findOne({ where: { id } });
-
-    if (!oneQuiz) {
-      throw new HttpException('Quiz Not Available', HttpStatus.NOT_FOUND);
-    }
-    if (oneQuiz.user.id !== auth.authUser.id) {
-      throw new HttpException('Permission Denied', HttpStatus.NOT_ACCEPTABLE);
-    }
-    if (oneQuiz.isPublished)
-      throw new HttpException('Access Denied', HttpStatus.NOT_ACCEPTABLE);
     if (body?.isPublished) {
       const Allquiz = await this.quizRepository.find({
         where: { id: id },
-        relations: { questions: true },
+        relations: ['questions', 'user'],
       });
       const quiz = Allquiz.find((element) => element.id == id);
+      if (!quiz) {
+        throw new HttpException('Quiz Not Available', HttpStatus.NOT_FOUND);
+      }
+      if (quiz.user.id !== auth.authUser.id) {
+        throw new HttpException('Permission Denied', HttpStatus.NOT_ACCEPTABLE);
+      }
+      if (quiz.isPublished)
+        throw new HttpException('Access Denied', HttpStatus.NOT_ACCEPTABLE);
       if (quiz.questions.length === 0) {
         throw new HttpException(
           ' Cannot Publish,No Questions in the Quiz',
           HttpStatus.NOT_ACCEPTABLE,
         );
       }
-    }
+    } else
+      throw new HttpException(
+        'Quiz Already Published',
+        HttpStatus.NOT_ACCEPTABLE,
+      );
     await Quiz.update(id, body);
     const quiz = await Quiz.findOneBy({ id });
     return quiz;

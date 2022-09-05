@@ -19,6 +19,7 @@ import { Request, Response } from 'express';
 import { AuthGuard } from 'src/Guard/auth.guard';
 import * as jwt from 'jsonwebtoken';
 import { createUserSchema } from 'src/joi-schema/joi-schema';
+import { AuthDecor, IAuth } from 'src/Decor/AuthDecor';
 
 @Controller('user')
 export class UserController {
@@ -41,14 +42,10 @@ export class UserController {
   @UseGuards(AuthGuard)
   @Get('quiz')
   findOne(
-    @Req() request: Request,
     @Query() { page, limit }: { page: number; limit: number },
+    @AuthDecor() auth: IAuth,
   ) {
-    const token = request.headers?.token;
-
-    const decoded = jwt.verify(token, 'secret');
-    const id = decoded.id;
-    console.log(decoded);
+    const id = auth.authUser.id;
 
     return this.userService.getOneById(id, +page, +limit);
   }

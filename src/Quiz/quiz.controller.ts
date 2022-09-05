@@ -12,11 +12,8 @@ import {
   Req,
   UseGuards,
 } from '@nestjs/common';
-import { Request } from 'express';
 import { AuthGuard } from 'src/Guard/auth.guard';
-import * as jwt from 'jsonwebtoken';
 import { createQuizSchema } from 'src/joi-schema/joi-schema';
-
 import { QuizService } from './quiz.service';
 import { AuthDecor, IAuth } from 'src/Decor/AuthDecor';
 
@@ -26,11 +23,8 @@ export class QuizController {
 
   @UseGuards(AuthGuard)
   @Post()
-  createQuiz(@Body() body: any, @Req() request: Request) {
-    const token = request.headers?.token;
-
-    const decoded = jwt.verify(token, 'secret');
-    const id = decoded.id;
+  createQuiz(@Body() body: any, @AuthDecor() auth: IAuth) {
+    const id = auth.authUser.id;
     body = { ...body, user: id };
     const { error } = createQuizSchema.validate(body);
     if (error) {
@@ -48,7 +42,7 @@ export class QuizController {
   @UseGuards(AuthGuard)
   @Get(':id')
   findOne(@Param('id') id: string, @AuthDecor() auth: IAuth) {
-    console.log('controller');
+    // console.log('controller');
     return this.quizService.getOneById(id, auth);
   }
 
@@ -57,7 +51,6 @@ export class QuizController {
     return this.quizService.getOnePermaLink(id);
   }
 
-  @UseGuards(AuthGuard)
   @Post('score/:permalink')
   getScore(@Param('permalink') permalink: string, @Body() body: any) {
     return this.quizService.getScore(permalink, body);
@@ -66,6 +59,7 @@ export class QuizController {
   @UseGuards(AuthGuard)
   @Patch(':id')
   update(@Param('id') id: string, @Body() body: any, @AuthDecor() auth: IAuth) {
+    //console.log(id);
     return this.quizService.updatebyID(id, body, auth);
   }
 
