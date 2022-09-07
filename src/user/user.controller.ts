@@ -18,7 +18,7 @@ import { UserService } from './user.service';
 import { Request, Response } from 'express';
 import { AuthGuard } from 'src/Guard/auth.guard';
 import * as jwt from 'jsonwebtoken';
-import { createUserSchema } from 'src/joi-schema/joi-schema';
+import { createUserSchema, LoginUserSchema } from 'src/joi-schema/joi-schema';
 import { AuthDecor, IAuth } from 'src/Decor/AuthDecor';
 
 @Controller('user')
@@ -27,7 +27,11 @@ export class UserController {
 
   @Post('login')
   LoginUser(@Body() body: any, @Res({ passthrough: true }) response: Response) {
-    return this.userService.loginUser(body, response);
+    const { value, error } = LoginUserSchema.validate(body);
+    if (error) {
+      throw new HttpException(error.message, HttpStatus.NOT_ACCEPTABLE);
+    }
+    return this.userService.loginUser(value, response);
   }
 
   @Post('register')
@@ -46,7 +50,6 @@ export class UserController {
     @AuthDecor() auth: IAuth,
   ) {
     const id = auth.authUser.id;
-
     return this.userService.getOneById(id, +page, +limit);
   }
 }

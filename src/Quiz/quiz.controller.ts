@@ -30,7 +30,6 @@ export class QuizController {
     if (error) {
       throw new HttpException(error.message, HttpStatus.NOT_ACCEPTABLE);
     }
-
     return this.quizService.createQuiz(body);
   }
 
@@ -42,7 +41,6 @@ export class QuizController {
   @UseGuards(AuthGuard)
   @Get(':id')
   findOne(@Param('id') id: string, @AuthDecor() auth: IAuth) {
-    // console.log('controller');
     return this.quizService.getOneById(id, auth);
   }
 
@@ -59,7 +57,6 @@ export class QuizController {
   @UseGuards(AuthGuard)
   @Patch(':id')
   update(@Param('id') id: string, @Body() body: any, @AuthDecor() auth: IAuth) {
-    //console.log(id);
     return this.quizService.updatebyID(id, body, auth);
   }
 
