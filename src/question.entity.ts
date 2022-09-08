@@ -17,7 +17,7 @@ export class Question extends BaseEntity {
   question: string;
 
   @Column('simple-json')
-  answerOptions: { answerText: string; isCorrect: string }[];
+  answerOptions: { answerText: string; isCorrect: boolean }[];
 
   @Column()
   answerCount: number;

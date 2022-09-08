@@ -45,11 +45,11 @@ export class UserController {
 
   @UseGuards(AuthGuard)
   @Get('quiz')
-  findOne(
+  findUserQuiz(
     @Query() { page, limit }: { page: number; limit: number },
     @AuthDecor() auth: IAuth,
   ) {
     const id = auth.authUser.id;
-    return this.userService.getOneById(id, +page, +limit);
+    return this.userService.getUserQuiz(id, +page, +limit);
   }
 }

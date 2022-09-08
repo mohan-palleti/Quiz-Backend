@@ -3,8 +3,6 @@ import * as Joi from 'joi';
 
 export const quizHeading = Joi.object({
   title: Joi.string().trim().min(3).max(30).required(),
-
-  description: Joi.string().trim().min(3).max(70).required(),
 });
 
 export const createUserSchema = Joi.object({
@@ -28,20 +26,38 @@ export const LoginUserSchema = Joi.object({
 
 export const createQuestionSchema = Joi.object({
   question: Joi.string().trim().required().min(1),
-  answerOptions: Joi.array().items(
-    Joi.object({
-      answerText: Joi.string().trim().required(),
-      isCorrect: Joi.string().trim().required(),
-    }),
-  ),
+  answerOptions: Joi.array()
+    .min(2)
+    .unique((a, b) => a.answerText === b.answerText)
+    .items(
+      Joi.object({
+        answerText: Joi.string().trim().min(1).message('attttt').required(),
+        isCorrect: Joi.boolean().required(),
+      }).error(new Error('Cannot submit Empty options / answersss')),
+    ),
   answerCount: Joi.number().required(),
   hasMultiAns: Joi.boolean().required(),
   quiz: Joi.string().required(),
 });
 
+export const createQuestionSchema1 = Joi.object({
+  question: Joi.string().trim().required().min(1),
+  answerOptions: Joi.array()
+    .min(2)
+    .unique((a, b) => a.answerText === b.answerText)
+    .items(
+      Joi.object({
+        answerText: Joi.string().trim().min(1).message('attttt').required(),
+        isCorrect: Joi.boolean().required(),
+      }).error(new Error('Cannot submit Empty options / answersss')),
+    ),
+  answerCount: Joi.number().required(),
+  hasMultiAns: Joi.boolean().required(),
+});
+
 export const createQuizSchema = Joi.object({
   title: Joi.string().trim().required().min(3),
-
+  question: createQuestionSchema1,
   isPublished: Joi.boolean().required(),
   user: Joi.string().trim().required(),
 });

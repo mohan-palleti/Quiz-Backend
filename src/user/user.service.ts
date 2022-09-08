@@ -26,30 +26,22 @@ export class UserService {
     return this.userRepository.find({ relations: ['quizes'] }); //select * from user
   }
 
-  async getOneById(id: string, page: number, limit: number): Promise<any> {
+  async getUserQuiz(id: string, page: number, limit: number): Promise<any> {
     try {
-      const empltyQuizes = await Quiz.find({ relations: ['questions'] });
-      for (let index = 0; index < empltyQuizes.length; index++) {
-        const quiz = empltyQuizes[index];
-        if (quiz.questions.length === 0) {
-          console.log('emp');
-          await Quiz.delete(quiz.id);
-        }
-      }
+      //delete empty quiz(loop over quizes)
 
-      const quizes = await Quiz.find({ relations: ['user'] });
-      const userQuiz = quizes.filter((quiz) => {
-        return quiz.user.id === id;
-      });
-      //console.log(quizes, id);
+      //send quiz with questions
+
+      const user = await User.findOne({ where: { id }, relations: ['quizes'] });
+      const quizes = user.quizes;
 
       const pageNumber = page || 1;
       const size = limit || 2;
       const indexOfLastQuiz = pageNumber * size;
       const indexOfFirstQuiz = indexOfLastQuiz - size;
-      const currentQuiz = userQuiz?.slice(indexOfFirstQuiz, indexOfLastQuiz);
+      const currentQuiz = quizes?.slice(indexOfFirstQuiz, indexOfLastQuiz);
 
-      const totalPages = Math.ceil(userQuiz.length / size);
+      const totalPages = Math.ceil(quizes.length / size);
       return { currentQuiz, totalPages };
     } catch (error) {
       throw error;

@@ -8,7 +8,9 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { response } from 'express';
+import { nanoid } from 'nanoid';
 import { IAuth } from 'src/Decor/AuthDecor';
+import { Question } from 'src/question.entity';
 import { Quiz } from 'src/quiz.entity';
 import { Repository } from 'typeorm';
 
@@ -32,22 +34,41 @@ export class QuizService {
       } else {
         if (!EachQ.hasMultiAns) {
           let option = EachQ.answerOptions;
+          if (submitted?.length > 1) {
+            throw new HttpException(
+              'option doesnt exist',
+              HttpStatus.BAD_REQUEST,
+            );
+          } else if (!option[submitted[0]]) {
+            throw new HttpException(
+              'option doesnt exist',
+              HttpStatus.BAD_REQUEST,
+            );
+          }
           const ans = option[submitted[0]].isCorrect;
-          if (ans === 'true') {
+          if (ans === true) {
             score += 1;
           }
         } else {
           submitted = submitted.sort((a: number, b: number) => a - b);
           let totalAnswer = 0;
           let count = 0;
+          for (let i = 0; i < submitted.length; i++) {
+            if (!EachQ.answerOptions[submitted[i]]) {
+              throw new HttpException(
+                'Option doesnt exits',
+                HttpStatus.BAD_REQUEST,
+              );
+            }
+          }
           EachQ.answerOptions.forEach((option, index) => {
-            if (submitted.includes(index) && option.isCorrect === 'true') {
+            if (submitted.includes(index) && option.isCorrect === true) {
               count += 1;
             }
-            if (option.isCorrect === 'true') totalAnswer += 1;
+            if (option.isCorrect === true) totalAnswer += 1;
           });
           if (count === totalAnswer) {
-            console.log('math');
+            // console.log('math');
             score += 1;
           }
         }
@@ -83,17 +104,20 @@ export class QuizService {
     @InjectRepository(Quiz)
     private quizRepository: Repository<Quiz>,
   ) {}
-  async createQuiz(body: any) {
-    const createdQuiz = await this.quizRepository.save(body);
+  async createQuiz(question: any, quiz: any) {
+    const createdQuiz = await this.quizRepository.save(quiz);
+    const firstQuestion = { ...question, quiz: createdQuiz.id };
+    await Question.save(firstQuestion);
+
     return createdQuiz;
   }
 
   async deleteQuiz(id: string, auth: IAuth) {
-    console.log(id);
-    const Allquiz = await this.quizRepository.find({
+    const quiz = await Quiz.findOne({
+      where: { id },
       relations: ['questions', 'user'],
     });
-    const quiz = Allquiz.find((element) => element.id == id);
+
     if (!quiz) {
       throw new HttpException('Quiz Not Available', HttpStatus.NOT_FOUND);
     }
@@ -104,35 +128,52 @@ export class QuizService {
     return { response: 'Quiz Deleted' };
   }
 
+  //!-------------PAtch-------------------
   async updatebyID(id: string, body: any, auth: IAuth) {
-    if (body?.isPublished) {
-      const Allquiz = await this.quizRepository.find({
+    if (Object.keys(body).length === 1) {
+      //validate
+      const quiz = await this.quizRepository.findOne({
         where: { id: id },
         relations: ['questions', 'user'],
       });
-      const quiz = Allquiz.find((element) => element.id == id);
+      console.log(auth.authUser);
       if (!quiz) {
         throw new HttpException('Quiz Not Available', HttpStatus.NOT_FOUND);
       }
       if (quiz.user.id !== auth.authUser.id) {
-        throw new HttpException('Permission Denied', HttpStatus.NOT_ACCEPTABLE);
+        throw new HttpException('Permission Denied', HttpStatus.BAD_REQUEST);
       }
       if (quiz.isPublished)
-        throw new HttpException('Access Denied', HttpStatus.NOT_ACCEPTABLE);
-      if (quiz.questions.length === 0) {
         throw new HttpException(
-          ' Cannot Publish,No Questions in the Quiz',
-          HttpStatus.NOT_ACCEPTABLE,
+          'Cant Edit Published Quiz',
+          HttpStatus.BAD_REQUEST,
         );
+      else {
+        //update
+        if (body?.title) {
+          await Quiz.update(id, body);
+          const newQuiz = await Quiz.findOneBy({ id });
+          return newQuiz;
+        } else {
+          let checkPerma = true;
+          while (checkPerma) {
+            const permaLink = nanoid(6);
+            const existQuiz = await Quiz.findOne({ where: { permaLink } });
+            if (!existQuiz) {
+              await Quiz.update(id, { ...body, permaLink });
+              const newQuiz = await Quiz.findOneBy({ id });
+              checkPerma = false;
+              return newQuiz;
+            }
+          }
+        }
       }
-    } else
+    } else {
       throw new HttpException(
-        'Quiz Already Published',
-        HttpStatus.NOT_ACCEPTABLE,
+        'Cannot Take Extra Fields for quiz',
+        HttpStatus.BAD_REQUEST,
       );
-    await Quiz.update(id, body);
-    const quiz = await Quiz.findOneBy({ id });
-    return quiz;
+    }
   }
 
   async getAll(page: number, limit: number): Promise<any> {
@@ -154,10 +195,10 @@ export class QuizService {
 
   async getOneById(id: string, auth: IAuth): Promise<any> {
     try {
-      const Allquiz = await this.quizRepository.find({
+      const quiz = await this.quizRepository.findOne({
+        where: { id },
         relations: ['questions', 'user'],
       });
-      const quiz = Allquiz.find((element) => element.id == id);
 
       if (!quiz) {
         throw new HttpException('Quiz Not Available', HttpStatus.NOT_FOUND);
@@ -165,12 +206,12 @@ export class QuizService {
       if (quiz.isPublished)
         throw new HttpException(
           'Permission Denied, Quiz Already Published',
-          HttpStatus.NOT_ACCEPTABLE,
+          HttpStatus.BAD_REQUEST,
         );
 
       // console.log('auth', auth);
       if (quiz.user.id !== auth.authUser.id) {
-        throw new HttpException('Permission Denied', HttpStatus.NOT_ACCEPTABLE);
+        throw new HttpException('Permission Denied', HttpStatus.BAD_REQUEST);
       }
 
       const { permaLink, isPublished, user, ...Quiz } = quiz;

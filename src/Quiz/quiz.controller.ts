@@ -30,7 +30,23 @@ export class QuizController {
     if (error) {
       throw new HttpException(error.message, HttpStatus.NOT_ACCEPTABLE);
     }
-    return this.quizService.createQuiz(body);
+    const { question, ...quiz } = body;
+    let noCorrectOption = 0;
+    question.answerOptions.forEach((element) => {
+      if (element.isCorrect === true) {
+        noCorrectOption += 1;
+      }
+    });
+    if (noCorrectOption === 0) {
+      if (noCorrectOption === 0) {
+        throw new HttpException(
+          'Atleast One Coorect Answer Required',
+          HttpStatus.NOT_ACCEPTABLE,
+        );
+      }
+    }
+
+    return this.quizService.createQuiz(question, quiz);
   }
 
   @Get()

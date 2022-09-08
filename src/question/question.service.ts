@@ -36,7 +36,24 @@ export class QuestionService {
 
     return question;
   }
-  async deleteUser(id: string) {
+  async deleteQuestion(id: string) {
+    const question = await Question.findOne({
+      where: { id },
+      relations: {
+        quiz: {
+          questions: true,
+        },
+      },
+    });
+    console.log(question);
+    if (question.quiz.isPublished) {
+      throw new HttpException('Quiz is published ', HttpStatus.BAD_REQUEST);
+    }
+    if (question.quiz.questions.length === 1)
+      throw new HttpException(
+        'Cannot make quiz empty ',
+        HttpStatus.NOT_ACCEPTABLE,
+      );
     const deleteQuestion = await Question.delete(id);
     return deleteQuestion;
   }
@@ -46,6 +63,7 @@ export class QuestionService {
     const question = await Question.findOneBy({ id });
     return question;
   }
+
   getAll(): Promise<any> {
     return this.questionRepository.find();
   }
@@ -53,7 +71,7 @@ export class QuestionService {
   async getOneById(id: string): Promise<Question> {
     try {
       const question = await this.questionRepository.findOneBy({ id });
-      //console.log(question);
+
       return question;
     } catch (error) {
       throw error;
