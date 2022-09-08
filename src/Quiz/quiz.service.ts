@@ -1,13 +1,6 @@
-import {
-  CACHE_MANAGER,
-  HttpException,
-  HttpStatus,
-  Inject,
-  Injectable,
-  NotAcceptableException,
-} from '@nestjs/common';
+import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { response } from 'express';
+
 import { nanoid } from 'nanoid';
 import { IAuth } from 'src/Decor/AuthDecor';
 import { Question } from 'src/question.entity';
@@ -68,7 +61,6 @@ export class QuizService {
             if (option.isCorrect === true) totalAnswer += 1;
           });
           if (count === totalAnswer) {
-            // console.log('math');
             score += 1;
           }
         }
@@ -131,7 +123,6 @@ export class QuizService {
   //!-------------PAtch-------------------
   async updatebyID(id: string, body: any, auth: IAuth) {
     if (Object.keys(body).length === 1) {
-      //validate
       const quiz = await this.quizRepository.findOne({
         where: { id: id },
         relations: ['questions', 'user'],
@@ -149,7 +140,6 @@ export class QuizService {
           HttpStatus.BAD_REQUEST,
         );
       else {
-        //update
         if (body?.title) {
           await Quiz.update(id, body);
           const newQuiz = await Quiz.findOneBy({ id });
@@ -190,7 +180,6 @@ export class QuizService {
     );
     const totalPages = Math.ceil(publishedQuizes.length / size);
     return { currentQuiz, totalPages };
-    //return publishedQuizes;
   }
 
   async getOneById(id: string, auth: IAuth): Promise<any> {
@@ -209,7 +198,6 @@ export class QuizService {
           HttpStatus.BAD_REQUEST,
         );
 
-      // console.log('auth', auth);
       if (quiz.user.id !== auth.authUser.id) {
         throw new HttpException('Permission Denied', HttpStatus.BAD_REQUEST);
       }
