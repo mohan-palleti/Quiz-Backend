@@ -137,6 +137,26 @@ export class QuestionController {
         noCorrectOption += 1;
       }
     });
+    if (body.answerCount === 0) {
+      throw new HttpException(
+        'Answer count should not be Zero',
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+    if (body.answerCount !== noCorrectOption) {
+      throw new HttpException(
+        'Incorrect values in answer count',
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+    if (!body.hasMultiAns && noCorrectOption > 1) {
+      throw new HttpException(
+        'Incorrect values submitted',
+        HttpStatus.NOT_ACCEPTABLE,
+      );
+    }
+    if (body.hasMultiAns && noCorrectOption === 0)
+      throw new HttpException('incorrect values', HttpStatus.BAD_REQUEST);
     if (
       noCorrectOption === 0 ||
       (existingQuiz.questions && existingQuiz.questions?.length > 0)

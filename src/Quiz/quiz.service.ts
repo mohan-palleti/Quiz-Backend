@@ -72,10 +72,14 @@ export class QuizService {
 
   async getOnePermaLink(id: string) {
     try {
-      const Allquiz = await this.quizRepository.find({
+      const quiz = await this.quizRepository.findOne({
+        where: { permaLink: id },
         relations: { questions: true },
       });
-      const quiz = Allquiz.find((element) => element.permaLink == id);
+      if (!quiz) {
+        throw new HttpException('Invalid Perma Link', HttpStatus.BAD_REQUEST);
+      }
+      //const quiz = Allquiz.find((element) => element.permaLink == id);
       const { title, questions, isPublished } = quiz;
       let Sortquestions = questions.map((EachQ) => {
         const { question, hasMultiAns } = EachQ;
