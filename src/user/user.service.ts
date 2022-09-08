@@ -76,7 +76,7 @@ export class UserService {
             'secret',
           );
           const { password, email, name, ...info } = matchedUser;
-          //await this.cacheManager.set('bikeUser', token, { ttl: 10000 });
+
           return {
             token,
           };
@@ -91,18 +91,20 @@ export class UserService {
 
   async createUser(body: any): Promise<string> {
     try {
-    } catch (error) {}
-    const users = await this.userRepository.find();
-    let matchedUser = users.find((e) => e.email === body.email);
-    if (matchedUser) {
-      throw new HttpException('user already exists', 403);
+      const users = await this.userRepository.find();
+      let matchedUser = users.find((e) => e.email === body.email);
+      if (matchedUser) {
+        throw new HttpException('user already exists', 402);
+      }
+      let password = encodePassword(body.password);
+      const newUser = this.userRepository.create({ ...body, password });
+
+      this.userRepository.save(newUser);
+
+      return 'Account Created Successfully';
+    } catch (error) {
+      return error;
     }
-    let password = encodePassword(body.password);
-    const newUser = this.userRepository.create({ ...body, password });
-
-    this.userRepository.save(newUser);
-
-    return 'Account Created Successfully';
   }
 
   async deleteUser(id: string): Promise<any> {

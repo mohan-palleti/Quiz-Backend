@@ -91,12 +91,6 @@ export class QuestionController {
     return this.questionService.createQuestion(value);
   }
 
-  //!--------------------get by ID------------------
-  @Get(':id')
-  findOne(@Param('id', ParseIntPipe) id: string) {
-    return this.questionService.getOneById(id);
-  }
-
   //!------------------PAtch----------------------------------------
   @UseGuards(AuthGuard)
   @Patch(':id')
@@ -105,12 +99,7 @@ export class QuestionController {
     @Body() body: any,
     @AuthDecor() auth: IAuth,
   ) {
-    if (Object.keys(body).length === 0) {
-      throw new HttpException(
-        'No data Received to update',
-        HttpStatus.NOT_ACCEPTABLE,
-      );
-    }
+    const { value, error } = createQuestionSchema.validate(body);
     const question = await Question.findOne({
       where: { id },
       relations: {
@@ -124,16 +113,65 @@ export class QuestionController {
     if (auth.authUser.id !== question.quiz.user.id) {
       throw new HttpException('Permission Denied', HttpStatus.BAD_REQUEST);
     }
+
     if (question.quiz.isPublished) {
       throw new HttpException(
         'Quiz is Published ,Cannot Edit',
         HttpStatus.BAD_REQUEST,
       );
     }
+    const quizId = question.quiz.id;
+    const existingQuiz = await Quiz.findOne({
+      where: { id: quizId },
+      relations: ['questions', 'user'],
+    });
+    if (quizId !== value.quiz) {
+      throw new HttpException(
+        'Question doesnt belong to the quiz',
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+    let noCorrectOption = 0;
+    body.answerOptions.forEach((element) => {
+      if (element.isCorrect === true) {
+        noCorrectOption += 1;
+      }
+    });
+    if (
+      noCorrectOption === 0 ||
+      (existingQuiz.questions && existingQuiz.questions?.length > 0)
+    ) {
+      if (noCorrectOption === 0) {
+        throw new HttpException(
+          'Atleast One Coorect Answer Required',
+          HttpStatus.NOT_ACCEPTABLE,
+        );
+      }
+      if (existingQuiz.questions) {
+        let c = 0;
+        for (let index = 0; index < existingQuiz.questions.length; index++) {
+          let e = existingQuiz.questions[index];
+          if (e.question == value.question) {
+            if (question.id === e.id) continue;
+            c += 1;
+            throw new HttpException(
+              'Duplicate Question ,Please Check',
+              HttpStatus.NOT_ACCEPTABLE,
+            );
+          }
+        }
+      }
+    }
+
+    if (error) {
+      throw new HttpException(error.message, HttpStatus.NOT_ACCEPTABLE);
+    }
 
     return this.questionService.updatebyID(id, body);
   }
 
+  //!-------------------------Delete question-----------------
+  @UseGuards(AuthGuard)
   @Delete(':id')
   async remove(@Param('id') id: string, @AuthDecor() auth: IAuth) {
     const question = await Question.findOne({
@@ -144,8 +182,10 @@ export class QuestionController {
         },
       },
     });
+
     if (!question)
       throw new HttpException('Question doesnt exist', HttpStatus.NOT_FOUND);
+
     if (auth.authUser.id !== question.quiz.user.id) {
       throw new HttpException('Permission Denied', HttpStatus.BAD_REQUEST);
     }

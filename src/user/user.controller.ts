@@ -38,7 +38,7 @@ export class UserController {
   createUser(@Body() body: any) {
     const { value, error } = createUserSchema.validate(body);
     if (error) {
-      throw new HttpException(error.message, HttpStatus.NOT_ACCEPTABLE);
+      throw new HttpException(error.message, HttpStatus.BAD_REQUEST);
     }
     return this.userService.createUser(body);
   }
