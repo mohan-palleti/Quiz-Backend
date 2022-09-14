@@ -4,6 +4,9 @@ import * as Joi from 'joi';
 export const quizHeading = Joi.object({
   title: Joi.string().trim().min(3).max(30).required(),
 });
+export const quizPublish = Joi.object({
+  isPublished: Joi.boolean().required(),
+});
 
 export const createUserSchema = Joi.object({
   name: Joi.string().trim().required().min(3),

@@ -94,13 +94,12 @@ export class UserService {
       const users = await this.userRepository.find();
       let matchedUser = users.find((e) => e.email === body.email);
       if (matchedUser) {
-        throw new HttpException('user already exists', 402);
+        throw new HttpException('user already exists', HttpStatus.FORBIDDEN);
       }
       let password = encodePassword(body.password);
       const newUser = this.userRepository.create({ ...body, password });
 
       this.userRepository.save(newUser);
-
       return 'Account Created Successfully';
     } catch (error) {
       return error;

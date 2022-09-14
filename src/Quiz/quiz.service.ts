@@ -6,6 +6,7 @@ import { IAuth } from 'src/Decor/AuthDecor';
 import { Question } from 'src/question.entity';
 import { Quiz } from 'src/quiz.entity';
 import { Repository } from 'typeorm';
+import { quizHeading, quizPublish } from '../joi-schema/joi-schema';
 
 @Injectable()
 export class QuizService {
@@ -93,7 +94,7 @@ export class QuizService {
 
       return { questions: Sortquestions, title, isPublished };
     } catch (error) {
-      throw error;
+      console.log('error:', error);
     }
   }
   constructor(
@@ -126,37 +127,45 @@ export class QuizService {
 
   //!-------------PAtch-------------------
   async updatebyID(id: string, body: any, auth: IAuth) {
+    // console.log('--1');
     if (Object.keys(body).length === 1) {
       const quiz = await this.quizRepository.findOne({
         where: { id: id },
         relations: ['questions', 'user'],
       });
-      console.log(auth.authUser);
+      // console.log(auth.authUser);
       if (!quiz) {
         throw new HttpException('Quiz Not Available', HttpStatus.NOT_FOUND);
       }
       if (quiz.user.id !== auth.authUser.id) {
-        throw new HttpException('Permission Denied', HttpStatus.BAD_REQUEST);
+        throw new HttpException('Permission Denied', HttpStatus.UNAUTHORIZED);
       }
-      if (quiz.isPublished)
+      if (quiz.isPublished) {
         throw new HttpException(
           'Cant Edit Published Quiz',
           HttpStatus.BAD_REQUEST,
         );
-      else {
+      } else {
         if (body?.title) {
-          await Quiz.update(id, body);
-          const newQuiz = await Quiz.findOneBy({ id });
+          const { value, error } = quizHeading.validate(body);
+          if (error) {
+            throw new HttpException(error.message, HttpStatus.NOT_ACCEPTABLE);
+          }
+          const newQuiz = await Quiz.update(id, value);
+
           return newQuiz;
         } else {
+          const { value, error } = quizPublish.validate(body);
+          if (error) {
+            throw new HttpException(error.message, 403);
+          }
           let checkPerma = true;
           while (checkPerma) {
             const permaLink = nanoid(6);
             const existQuiz = await Quiz.findOne({ where: { permaLink } });
             if (!existQuiz) {
-              await Quiz.update(id, { ...body, permaLink });
-              const newQuiz = await Quiz.findOneBy({ id });
-              checkPerma = false;
+              const newQuiz = await Quiz.update(id, { ...value, permaLink });
+
               return newQuiz;
             }
           }
@@ -203,14 +212,14 @@ export class QuizService {
         );
 
       if (quiz.user.id !== auth.authUser.id) {
-        throw new HttpException('Permission Denied', HttpStatus.BAD_REQUEST);
+        throw new HttpException('Permission Denied', HttpStatus.UNAUTHORIZED);
       }
 
       const { permaLink, isPublished, user, ...Quiz } = quiz;
 
       return Quiz;
     } catch (error) {
-      throw error;
+      console.log('error:', error);
     }
   }
 }

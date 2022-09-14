@@ -36,13 +36,13 @@ export class QuestionController {
     });
 
     if (auth.authUser.id !== existingQuiz.user.id) {
-      throw new HttpException('Permission Denied', HttpStatus.NOT_ACCEPTABLE);
+      throw new HttpException('Permission Denied', HttpStatus.UNAUTHORIZED);
     }
 
     if (existingQuiz.isPublished) {
       throw new HttpException(
         'Quiz published ,cannot edit',
-        HttpStatus.NOT_ACCEPTABLE,
+        HttpStatus.BAD_REQUEST,
       );
     }
 
@@ -111,7 +111,7 @@ export class QuestionController {
     if (!question)
       throw new HttpException('Question doesnt exist', HttpStatus.NOT_FOUND);
     if (auth.authUser.id !== question.quiz.user.id) {
-      throw new HttpException('Permission Denied', HttpStatus.BAD_REQUEST);
+      throw new HttpException('Permission Denied', HttpStatus.UNAUTHORIZED);
     }
 
     if (question.quiz.isPublished) {
@@ -207,7 +207,7 @@ export class QuestionController {
       throw new HttpException('Question doesnt exist', HttpStatus.NOT_FOUND);
 
     if (auth.authUser.id !== question.quiz.user.id) {
-      throw new HttpException('Permission Denied', HttpStatus.BAD_REQUEST);
+      throw new HttpException('Permission Denied', HttpStatus.UNAUTHORIZED);
     }
     if (question.quiz.isPublished) {
       throw new HttpException(

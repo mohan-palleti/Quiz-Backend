@@ -40,7 +40,7 @@ export class UserController {
     if (error) {
       throw new HttpException(error.message, HttpStatus.BAD_REQUEST);
     }
-    return this.userService.createUser(body);
+    return this.userService.createUser(value);
   }
 
   @UseGuards(AuthGuard)
